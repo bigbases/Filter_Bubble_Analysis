@@ -1,0 +1,7 @@
+Input: 
+{{
+  "query": {query},
+  "title": {title},
+  "news_text": {text}
+}}
+Output: 
