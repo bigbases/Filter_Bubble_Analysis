@@ -151,6 +151,9 @@ python start.py all
 
 # Start scheduled scraper (runs daily at 00:01)
 python start.py schedule
+
+# Start collection url to detail content
+python url2content.py 
 ```
 
 ### Advanced Usage
