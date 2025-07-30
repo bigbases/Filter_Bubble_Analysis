@@ -32,7 +32,7 @@ def add_effectsize_alpha_legend(base_folder):
     plt.close()
 
 def map_effect_alpha(effect_size):
-    """효과 크기별로 투명도 조절"""
+    """Adjust transparency based on effect size"""
     if effect_size < 0.01:
         return 0.1
     elif effect_size < 0.06:
@@ -40,13 +40,13 @@ def map_effect_alpha(effect_size):
     elif effect_size < 0.14:
         return 0.9
     else:
-        return 1.0  # Large는 투명도는 그대로
+        return 1.0  # Large is still transparent
 
 def get_effect_color(effect_size):
     if effect_size >= 0.14:
-        return '#C70039'  # 진한 빨간색
+        return '#C70039'  # Dark red
     else:
-        return '#FF4500'  # 주황
+        return '#FF4500'  # Orange
 
 
 def create_model_legend(df, base_folder='5_1'):
@@ -69,10 +69,10 @@ def create_model_legend(df, base_folder='5_1'):
     ax.plot([], [], color='r', linestyle=':', label='Significance threshold (p = 0.05)')
 
     ax.axis('off')
-    ax.legend(loc='center', ncol=3, fontsize=12, frameon=False, labelspacing=0.02,      # 세로 항목 간 간격 ↓
-    handletextpad=0.3,     # 마커와 텍스트 간 거리 ↓
-    borderaxespad=0.1,     # 레전드와 플롯 경계 거리 ↓
-    borderpad=0.1          # 레전드 안쪽 패딩 ↓
+    ax.legend(loc='center', ncol=3, fontsize=12, frameon=False, labelspacing=0.02,
+    handletextpad=0.3,
+    borderaxespad=0.1,
+    borderpad=0.1
     )
     
     path = os.path.join(base_folder, 'legend_models.png')
@@ -92,16 +92,16 @@ def create_effectsize_legend(base_folder='5_1'):
 
     fig, ax = plt.subplots(figsize=(10, 0.5))
     # color = '#FF4500'
-    colors = ['#FF4500', '#FF4500', '#FF4500', '#C70039']  # 마지막만 빨간색
+    colors = ['#FF4500', '#FF4500', '#FF4500', '#C70039']  # Last one is red
 
     for i, (label, alpha) in enumerate(alpha_legend_data.items()):
         ax.scatter([], [], marker='o', color=colors[i], alpha=alpha, s=250, label=f"Effect: {label}", edgecolor='none')
 
     ax.axis('off')
-    ax.legend(loc='center', ncol=4, fontsize=12, frameon=False, labelspacing=0.02,      # 세로 항목 간 간격 ↓
-    handletextpad=0.3,     # 마커와 텍스트 간 거리 ↓
-    borderaxespad=0.1,     # 레전드와 플롯 경계 거리 ↓
-    borderpad=0.1          # 레전드 안쪽 패딩 ↓
+    ax.legend(loc='center', ncol=4, fontsize=12, frameon=False, labelspacing=0.02,
+    handletextpad=0.3,
+    borderaxespad=0.1,
+    borderpad=0.1
     )
     
     path = os.path.join(base_folder, 'legend_effectsize.png')
@@ -121,7 +121,7 @@ def create_grid_plots(df, base_folder='5_1'):
     create_effectsize_legend(base_folder)
     
     
-    # User Context 이름 매핑 및 순서 정의
+    # Define user context name mapping and order
     context_mapping = {
         'user_agent': 'E',
         'accept_language': 'L',
@@ -141,11 +141,11 @@ def create_grid_plots(df, base_folder='5_1'):
     n_cols = 3
     n_rows = math.ceil(n_queries / n_cols)
     
-    # context 이름 매핑 적용
+    # Apply context name mapping
     df['pf_folder_mapped'] = df['pf_folder'].map(context_mapping)
     
     for search_engine in search_engines:
-        fig = plt.figure(figsize=(18, 4*n_rows))  # 5*n_rows의 80%는 4*n_rows
+        fig = plt.figure(figsize=(18, 4*n_rows))
         
         for idx, query in enumerate(unique_queries, 1):
             query_data = df[(df['query'] == query) & 
@@ -190,7 +190,7 @@ def create_grid_plots(df, base_folder='5_1'):
                             url_count = model_data['Unique_URL_Count'].iloc[0]
                             alpha_val = map_effect_alpha(effect)
                             color_val = get_effect_color(effect)
-                            # 점 찍기
+                            # Plot the point
                             ax.scatter([pos],
                                     [pval],
                                     marker=markers[model_idx % len(markers)],
@@ -210,11 +210,11 @@ def create_grid_plots(df, base_folder='5_1'):
                                         linewidth=1.5,
                                         zorder=5)
 
-                            # 고유 URL 수 텍스트
+                            # Unique URL count text
                             if not count_text_added:
-                                # 모든 URL 수 텍스트를 차트 중간(y=0.5)에 표시
+                                # Display all URL count text in the middle of the chart (y=0.5)
                                 ax.text(pos,
-                                        0.5,  # 항상 차트 중간에 표시
+                                        0.5,  # Always display in the middle of the chart
                                         f'{url_count}',
                                         fontsize=13,
                                         rotation=80,
@@ -252,7 +252,7 @@ def create_grid_plots(df, base_folder='5_1'):
                              fontsize=18)
             
             # ax.set_ylabel('P-value', fontsize=14)
-            ## 하이라이트되도록 변경
+            ## Change to highlight
             ax.axhline(y=0.05, color='blue', linestyle=':', alpha=1, zorder=0)
             
         # fig.suptitle(f'P-value Trends ({search_engine})', fontsize=20, y=1.02)
@@ -265,7 +265,7 @@ def create_grid_plots(df, base_folder='5_1'):
         print(f"Created visualization for {search_engine}")
 
 def main(df, base_folder='4'):
-    # 'political'과 'stance' 컬럼만 포함, model_name 필터 적용
+    # Include only 'political' and 'stance' columns, apply model_name filter
     df = df[df['model_name'].isin(['Political_Score', 'Stance_Score'])]
     df['datetime_folder'] = pd.to_datetime(df['datetime_folder'])
     df = df.sort_values(['query', 'datetime_folder', 'model_name', 'pir_folder'])
@@ -273,7 +273,7 @@ def main(df, base_folder='4'):
 
 if __name__ == "__main__":
     # 2024-09
-    # 0921_4dim_perspective
+    # 0921-30
     setting_date = '0921-30'
     current_dir = os.path.dirname(os.path.abspath(__file__))
     csv_path = os.path.join(current_dir, f'4/tests_{setting_date}.csv')

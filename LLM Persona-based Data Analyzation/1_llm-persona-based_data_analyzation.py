@@ -83,31 +83,31 @@ def create_claude_content(query, title, text, claude_model_version_list):
     return responses
 
 def create_role_opposed_left_prompt(query):
-    role_prompt_path = os.path.join(current_dir, 'prompt_fewshot_2dim_perspective', 'prompt_role_opposed_left.txt')
+    role_prompt_path = os.path.join(current_dir, 'prompt', 'prompt_role_opposed_left.txt')
     with open(role_prompt_path, 'r', encoding='utf-8') as f:
         prompt_template = f.read()
     return prompt_template.format(query=query)
 
 def create_role_opposed_right_prompt(query):
-    role_prompt_path = os.path.join(current_dir, 'prompt_fewshot_2dim_perspective', 'prompt_role_opposed_right.txt')
+    role_prompt_path = os.path.join(current_dir, 'prompt', 'prompt_role_opposed_right.txt')
     with open(role_prompt_path, 'r', encoding='utf-8') as f:
         prompt_template = f.read()
     return prompt_template.format(query=query)
 
 def create_role_supportive_left_prompt(query):
-    role_prompt_path = os.path.join(current_dir, 'prompt_fewshot_2dim_perspective', 'prompt_role_supportive_left.txt')
+    role_prompt_path = os.path.join(current_dir, 'prompt', 'prompt_role_supportive_left.txt')
     with open(role_prompt_path, 'r', encoding='utf-8') as f:
         prompt_template = f.read()
     return prompt_template.format(query=query)
 
 def create_role_supportive_right_prompt(query):
-    role_prompt_path = os.path.join(current_dir, 'prompt_fewshot_2dim_perspective', 'prompt_role_supportive_right.txt')
+    role_prompt_path = os.path.join(current_dir, 'prompt', 'prompt_role_supportive_right.txt')
     with open(role_prompt_path, 'r', encoding='utf-8') as f:
         prompt_template = f.read()
     return prompt_template.format(query=query)
 
 def create_content_prompt(query, title, text):
-    content_prompt_path = os.path.join(current_dir, 'prompt_fewshot_2dim_perspective', 'prompt_content.txt')
+    content_prompt_path = os.path.join(current_dir, 'prompt', 'prompt_content.txt')
     with open(content_prompt_path, 'r', encoding='utf-8') as f:
         prompt_template = f.read()
     return prompt_template.format(query=query, title=title, text=text)
@@ -120,14 +120,6 @@ def create_empty_result_json():
         "score": 0.0
     },
     "Stance": {
-        "label": "Undecided",
-        "score": 0.0
-    },
-    "Subjectivity": {
-        "label": "Undecided",
-        "score": 0.0
-    },
-    "Bias": {
         "label": "Undecided",
         "score": 0.0
     },
@@ -264,19 +256,10 @@ def get_df(datetime_range, claude_model_version_list, chatgpt_model_version_list
 
 if __name__ == '__main__':
     claude_model_version_list = [
-        # 'claude-3-opus-20240229',
-        # 'claude-3-sonnet-20240229',
-        # 'claude-3-haiku-20240307',
         'claude-3-5-sonnet-20241022'
     ]
     chatgpt_model_version_list = [
         'gpt-4o',
-        # 'gpt-3.5-turbo-instruct',
-        # 'gpt-4o-mini',
-        # 'gpt-4-turbo',
-        # 'gpt-4',
-        # 'gpt-3.5-turbo-0125',
-        # 'chatgpt-4o-latest '
     ]
     datetime_range = ['2024-09-24', '2024-09-30']
     endswith_date = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")

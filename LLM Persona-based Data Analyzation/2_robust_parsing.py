@@ -81,8 +81,6 @@ def get_df(datetime_range, claude_model_version_list, chatgpt_model_version_list
                         
                         # Concatenate with original DataFrame
                         df = pd.concat([df, parsed_df], axis=1)
-                        # print(f"Processed column: {column}")
-                        # print(df.head())
                     
                     # Save the updated DataFrame
                     result_final_path = final_path.replace('result_folder', 'parsing_folder')
@@ -125,12 +123,6 @@ def parse_response(json_string):
                 'Political_Score': None,
                 'Stance_Label': None,
                 'Stance_Score': None,
-                # 'Sentiment_Label': None,
-                # 'Sentiment_Score': None,
-                'Subjectivity_Label': None,
-                'Subjectivity_Score': None,
-                'Bias_Label': None,
-                'Bias_Score': None,
                 'Reasoning': None,
             }
 
@@ -138,7 +130,7 @@ def parse_response(json_string):
             data = json.loads(clean_string)
         except json.JSONDecodeError:
             data = {}
-            for field in ['Political', 'Stance', 'Subjectivity', 'Bias']:
+            for field in ['Political', 'Stance']:
                 label_match = re.search(fr'"{field}":\s*{{\s*"label":\s*"([^"]+)"', clean_string)
                 score_match = re.search(fr'"{field}":\s*{{\s*"label":[^}}]+,"score":\s*([-]?\d+\.?\d*)', clean_string)
                 data[field] = {
@@ -157,12 +149,6 @@ def parse_response(json_string):
             'Political_Score': data.get('Political', {}).get('score'),
             'Stance_Label': data.get('Stance', {}).get('label'),
             'Stance_Score': data.get('Stance', {}).get('score'),
-            # 'Sentiment_Label': data.get('Sentiment', {}).get('label'),
-            # 'Sentiment_Score': data.get('Sentiment', {}).get('score'),
-            'Subjectivity_Label': data.get('Subjectivity', {}).get('label'),
-            'Subjectivity_Score': data.get('Subjectivity', {}).get('score'),
-            'Bias_Label': data.get('Bias', {}).get('label'),
-            'Bias_Score': data.get('Bias', {}).get('score'),
             'Reasoning': data.get('Reasoning'),
         }
     
@@ -173,18 +159,10 @@ def parse_response(json_string):
 
 if __name__ == '__main__':
     claude_model_version_list = [
-        # 'claude-3-opus-20240229',
-        # 'claude-3-sonnet-20240229',
-        # 'claude-3-haiku-20240307',
         'claude-3-5-sonnet-20241022'
     ]
     chatgpt_model_version_list = [
         'gpt-4o',
-        # 'gpt-4o-mini',
-        # 'gpt-4-turbo',
-        # 'gpt-4',
-        # 'gpt-3.5-turbo-0125',
-        # 'chatgpt-4o-latest '
     ]
     datetime_range = ['2024-09-21', '2024-09-30']
     get_df(datetime_range, claude_model_version_list, chatgpt_model_version_list)

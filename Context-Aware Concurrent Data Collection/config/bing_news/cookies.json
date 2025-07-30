@@ -1,0 +1,11 @@
+{
+    "support" : {
+        "file": "/Users/{user_name}/Library/Application Support/Google/Chrome/Profile 6/Cookies"
+    },
+    "default" : {
+        "file": "/Users/{user_name}/Library/Application Support/Google/Chrome/Profile 2/Cookies"
+    },
+    "oppose":{
+        "file": "/Users/{user_name}/Library/Application Support/Google/Chrome/Profile 7/Cookies"
+    }
+}

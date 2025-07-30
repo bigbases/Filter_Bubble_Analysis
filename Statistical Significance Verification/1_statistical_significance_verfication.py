@@ -81,30 +81,29 @@ unique_url_counts_df.to_csv(os.path.join(current_dir, f'4/aggregated_results/agg
 
 
 def calculate_kruskal_effect_size(stat, n_total, n_groups):
-    """
-    Kruskal-Wallis 테스트의 effect size (η² or ε²)를 계산합니다.
-    
+    """ # 영어로 주석 변환 
+    Calculate the effect size (η² or ε²) of the Kruskal-Wallis test.
     Args:
-        stat: Kruskal-Wallis H 통계량
-        n_total: 전체 샘플 크기
-        n_groups: 그룹 수
+        stat: Kruskal-Wallis H statistic
+        n_total: Total sample size
+        n_groups: Number of groups
     
     Returns:
-        eta_squared: Kruskal-Wallis의 이타 제곱 effect size
-        epsilon_squared: Kruskal-Wallis의 엡실론 제곱 effect size
-        해석 정보
+        eta_squared: Effect size (η²)
+        epsilon_squared: Effect size (ε²)
+        interpretation: Interpretation of the effect size
     """
     try:
-        # 이타 제곱(η²) 계산: H/(n-1)
+        # Calculate eta squared (η²): H/(n-1)
         if n_total <= 1:
             return 0.0, 0.0, "negligible"
             
         eta_squared = stat / (n_total - 1)
         
-        # 엡실론 제곱(ε²) 계산: H/(n-1)/(n+1)
+        # Calculate epsilon squared (ε²): H/(n-1)/(n+1)
         epsilon_squared = eta_squared * ((n_total - 1) / (n_total + 1))
         
-        # 해석 정보
+        # Interpretation of the effect size
         interpretation = ""
         if eta_squared < 0.01:
             interpretation = "negligible"
@@ -122,59 +121,59 @@ def calculate_kruskal_effect_size(stat, n_total, n_groups):
 
 
 def calculate_anova_effect_size(groups):
-    """
-    ANOVA의 effect size (η² and ω²)를 계산합니다.
+    """ # 영어로 주석 변환 
+    Calculate the effect size (η² and ω²) of the ANOVA test.
     
     Args:
-        groups: 데이터 그룹의 리스트
+        groups: List of data groups
     
     Returns:
-        eta_squared: ANOVA의 이타 제곱 effect size
-        omega_squared: ANOVA의 오메가 제곱 effect size
-        해석 정보
+        eta_squared: Effect size (η²) of the ANOVA test
+        omega_squared: Effect size (ω²) of the ANOVA test
+        interpretation: Interpretation of the effect size
     """
     try:
-        # 전체 데이터 병합
+        # Merge all data
         all_data = np.concatenate(groups)
         n_total = len(all_data)
         
-        # 그룹 간 자유도
+        # Degrees of freedom between groups
         df_between = len(groups) - 1
         
-        # 그룹 내 자유도
+        # Degrees of freedom within groups
         df_within = n_total - len(groups)
         
         if df_within <= 0 or df_between <= 0:
             return 0.0, 0.0, "negligible"
         
-        # 전체 평균
+        # Grand mean
         grand_mean = np.mean(all_data)
         
-        # 그룹 평균
+        # Group means
         group_means = [np.mean(group) for group in groups]
         
-        # 그룹 크기
+        # Group sizes
         group_sizes = [len(group) for group in groups]
         
-        # 그룹 간 제곱합 (SSB)
+        # Between-group sum of squares (SSB)
         ss_between = sum(size * (mean - grand_mean)**2 for size, mean in zip(group_sizes, group_means))
         
-        # 전체 제곱합 (SST)
+        # Total sum of squares (SST)
         ss_total = sum((x - grand_mean)**2 for x in all_data)
         
-        # 그룹 내 제곱합 (SSW)
+        # Within-group sum of squares (SSW)
         ss_within = ss_total - ss_between
         
-        # 이타 제곱(η²) 계산
+        # Calculate eta squared (η²)
         if ss_total == 0:
             eta_squared = 0.0
         else:
             eta_squared = ss_between / ss_total
-        
-        # 오메가 제곱(ω²) 계산
+
+        # Calculate omega squared (ω²)
         ms_within = ss_within / df_within
         
-        # 오메가 제곱 분모 검사
+        # Check the denominator of omega squared
         denominator = ss_total + ms_within
         if denominator <= 0:  # 분모가 0이거나 음수인 경우
             omega_squared = 0
@@ -200,13 +199,13 @@ def calculate_anova_effect_size(groups):
 
 def apply_corrections(test_results):
     """
-    검색엔진×쿼리 기반으로 그룹화하여 Benjamini-Hochberg와 본페로니 교정을 모두 적용합니다.
+    Group by search engine and query, apply both Benjamini-Hochberg and Bonferroni corrections.
     
     Args:
-        test_results: 테스트 결과를 포함하는 딕셔너리
+        test_results: Dictionary containing test results
         
     Returns:
-        두 교정 방법이 적용된 업데이트된 테스트 결과
+        Updated test results with both corrections applied
     """
     # 모든 키에 필요한 필드가 있는지 확인
     for key, info in list(test_results.items()):
@@ -223,19 +222,16 @@ def apply_corrections(test_results):
     # 검색엔진(pir_folder)과 쿼리로 그룹화
     grouped_tests = {}
     for key, info in test_results.items():
-        # search_engine = key[1]  # pir_folder는 검색엔진을 나타냄
-        # query = key[3]
-        # group_key = (search_engine, query)
-        search_engine = key[1]  # 검색엔진
-        context = key[2]        # 사용자 컨텍스트
-        model_name = key[4]     # 분석 관점
+        search_engine = key[1]
+        context = key[2]
+        model_name = key[4]
         
         group_key = (search_engine, context, model_name)
             
         if group_key not in grouped_tests:
             grouped_tests[group_key] = []
         
-        # p_value가 NaN이면 1.0으로 대체 (가장 보수적인 p-value)
+        # If p_value is NaN, replace with 1.0 (most conservative p-value)
         p_value = info.get('p_value', 1.0)
         if np.isnan(p_value):
             p_value = 1.0
@@ -243,23 +239,23 @@ def apply_corrections(test_results):
         
         grouped_tests[group_key].append((key, p_value))
     
-    # 각 그룹별로 교정 적용
+    # Apply corrections for each group
     for group_key, tests in grouped_tests.items():
         keys = [t[0] for t in tests]
         p_values = [t[1] for t in tests]
         
-        # NaN 값 확인
+        # Check for NaN values
         if any(np.isnan(p) for p in p_values):
             print(f"Warning: NaN p-values found in group {group_key}. Replacing with 1.0")
             p_values = [p if not np.isnan(p) else 1.0 for p in p_values]
         
-        # 본페로니 교정
+        # Bonferroni correction
         n_tests = len(p_values)
         bonferroni_alpha = 0.05 / n_tests
         bonferroni_adjusted = [min(p * n_tests, 1.0) for p in p_values]
         
         try:
-            # Benjamini-Hochberg 교정
+            # Benjamini-Hochberg correction
             _, bh_adjusted_p_values, _, _ = multipletests(
                 p_values,
                 alpha=0.05,
@@ -267,9 +263,9 @@ def apply_corrections(test_results):
             )
         except Exception as e:
             print(f"Error applying BH correction for group {group_key}: {e}")
-            bh_adjusted_p_values = [min(p * 2, 1.0) for p in p_values]  # 보수적인 대체값
+            bh_adjusted_p_values = [min(p * 2, 1.0) for p in p_values]  # Conservative replacement value
         
-        # 두 교정 방법의 결과를 원래 결과에 추가
+        # Add the results of both correction methods to the original results
         for i, key in enumerate(keys):
             test_results[key]['bonferroni_p_value'] = bonferroni_adjusted[i]
             test_results[key]['bh_adjusted_p_value'] = bh_adjusted_p_values[i]
