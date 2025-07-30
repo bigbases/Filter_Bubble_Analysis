@@ -1,3 +1,25 @@
+"""
+Statistical Significance Verification Module
+
+This module performs comprehensive statistical analysis to verify the significance of
+search engine bias patterns across different user contexts, search engines, and topics.
+It employs rigorous statistical methods including normality testing, homogeneity testing,
+parametric and non-parametric tests, multiple comparison corrections, and effect size calculations.
+
+Key Features:
+- Unique URL count calculation for each user context group
+- Normality testing using Shapiro-Wilk test
+- Homogeneity of variance testing using Levene's test
+- Parametric testing (ANOVA) and non-parametric testing (Kruskal-Wallis)
+- Post-hoc testing with Tukey's HSD
+- Effect size calculations (η² and ω² for ANOVA, η² and ε² for Kruskal-Wallis)
+- Multiple comparison corrections (Bonferroni and Benjamini-Hochberg)
+- Robust error handling and comprehensive result storage
+
+Author: Research Team
+Date: 2024
+"""
+
 import pandas as pd
 import os
 from scipy.stats import kruskal, f_oneway, shapiro, levene
@@ -19,8 +41,19 @@ datetime_folders = [folder for folder in os.listdir(datasets_file_path) if os.pa
 # Dictionary to store all statistical test results
 pf_model_comparisons = {}
 
-# 1. 먼저 각 그룹별 고유 URL 수를 계산합니다
+# 1. First, calculate the number of unique URLs for each group
 def calculate_unique_url_counts():
+    """
+    Calculate the number of unique URLs for each user context group.
+    
+    This function processes all dataset files within the specified directory structure,
+    extracts unique URL counts for each combination of date, search engine (PIR), 
+    user context (PF), and query, and returns a consolidated dataframe.
+    
+    Returns:
+        pd.DataFrame: DataFrame containing unique URL counts with columns:
+                     ['datetime_folder', 'pir_folder', 'pf_folder', 'query', 'Unique_URL_Count']
+    """
     # Create a list to store all dataframes
     all_dfs = []
 
@@ -52,46 +85,49 @@ def calculate_unique_url_counts():
                         
                         all_dfs.append(df)
                     except Exception as e:
-                        print(f"Error reading file {file}: {e}")
+                        print(f"Error processing file {file}: {e}")
                         continue
 
     # Combine all dataframes
     if all_dfs:
         combined_df = pd.concat(all_dfs, ignore_index=True)
-
-        # Group by datetime_folder, pir_folder, pf_folder, and query, count unique URLs
-        result_df = (combined_df.groupby(['datetime_folder', 'pir_folder', 'pf_folder', 'query'])
-                    .agg({'url': 'nunique'})  # Assumes 'url' is the column name for URLs
-                    .reset_index()
-                    .rename(columns={'url': 'Unique_URL_Count'}))
-
-        print("Unique URL counts calculated successfully!")
-        return result_df
+        
+        # Calculate unique URL counts by group
+        unique_counts = combined_df.groupby(['datetime_folder', 'pir_folder', 'pf_folder', 'query'])['url'].nunique().reset_index()
+        unique_counts.rename(columns={'url': 'Unique_URL_Count'}, inplace=True)
+        
+        return unique_counts
     else:
-        print("No data found to calculate unique URL counts.")
+        print("No valid data found in any CSV files.")
         return pd.DataFrame(columns=['datetime_folder', 'pir_folder', 'pf_folder', 'query', 'Unique_URL_Count'])
 
-# 고유 URL 수 계산 및 저장
+
+# Calculate and store unique URL counts
 unique_url_counts_df = calculate_unique_url_counts()
 
-# 필요한 경우 저장
+# Save if needed
 if not os.path.exists(os.path.join(current_dir, f'4/aggregated_results')):
     os.makedirs(os.path.join(current_dir, f'4/aggregated_results'))
 unique_url_counts_df.to_csv(os.path.join(current_dir, f'4/aggregated_results/aggregated_results.csv'), index=False)
 
 
 def calculate_kruskal_effect_size(stat, n_total, n_groups):
-    """ # 영어로 주석 변환 
+    """
     Calculate the effect size (η² or ε²) of the Kruskal-Wallis test.
+    
+    This function computes both eta-squared and epsilon-squared effect sizes
+    for the Kruskal-Wallis H test, providing standardized measures of effect magnitude.
+    
     Args:
-        stat: Kruskal-Wallis H statistic
-        n_total: Total sample size
-        n_groups: Number of groups
+        stat (float): Kruskal-Wallis H statistic
+        n_total (int): Total sample size across all groups
+        n_groups (int): Number of groups being compared
     
     Returns:
-        eta_squared: Effect size (η²)
-        epsilon_squared: Effect size (ε²)
-        interpretation: Interpretation of the effect size
+        tuple: A tuple containing:
+            - eta_squared (float): Effect size (η²)
+            - epsilon_squared (float): Effect size (ε²)  
+            - interpretation (str): Interpretation of the effect size
     """
     try:
         # Calculate eta squared (η²): H/(n-1)
@@ -121,16 +157,20 @@ def calculate_kruskal_effect_size(stat, n_total, n_groups):
 
 
 def calculate_anova_effect_size(groups):
-    """ # 영어로 주석 변환 
+    """
     Calculate the effect size (η² and ω²) of the ANOVA test.
     
+    This function computes both eta-squared and omega-squared effect sizes
+    for ANOVA F-test, providing standardized measures of effect magnitude.
+    
     Args:
-        groups: List of data groups
+        groups (list): List of data groups (each group is a list/array of values)
     
     Returns:
-        eta_squared: Effect size (η²) of the ANOVA test
-        omega_squared: Effect size (ω²) of the ANOVA test
-        interpretation: Interpretation of the effect size
+        tuple: A tuple containing:
+            - eta_squared (float): Effect size (η²) of the ANOVA test
+            - omega_squared (float): Effect size (ω²) of the ANOVA test
+            - interpretation (str): Interpretation of the effect size
     """
     try:
         # Merge all data
@@ -175,12 +215,12 @@ def calculate_anova_effect_size(groups):
         
         # Check the denominator of omega squared
         denominator = ss_total + ms_within
-        if denominator <= 0:  # 분모가 0이거나 음수인 경우
+        if denominator <= 0:  # If denominator is 0 or negative
             omega_squared = 0
         else:
             omega_squared = (ss_between - (df_between * ms_within)) / denominator
         
-        # 해석 정보
+        # Interpretation information
         interpretation = ""
         if eta_squared < 0.01:
             interpretation = "negligible"
@@ -199,15 +239,26 @@ def calculate_anova_effect_size(groups):
 
 def apply_corrections(test_results):
     """
-    Group by search engine and query, apply both Benjamini-Hochberg and Bonferroni corrections.
+    Apply multiple comparison corrections to statistical test results.
+    
+    Groups test results by search engine and query, then applies both 
+    Benjamini-Hochberg (FDR) and Bonferroni corrections to control for 
+    multiple testing. This is essential when conducting multiple statistical 
+    tests simultaneously to avoid inflated Type I error rates.
     
     Args:
-        test_results: Dictionary containing test results
+        test_results (dict): Dictionary containing test results with p-values
         
     Returns:
-        Updated test results with both corrections applied
+        dict: Updated test results with correction information including:
+              - bonferroni_p_value: Bonferroni-adjusted p-value
+              - bh_adjusted_p_value: Benjamini-Hochberg adjusted p-value  
+              - bonferroni_significant: Boolean significance under Bonferroni
+              - bh_significant: Boolean significance under BH correction
+              - correction_group: Group identifier for correction
+              - group_size: Number of tests in the correction group
     """
-    # 모든 키에 필요한 필드가 있는지 확인
+    # Check that all keys have required fields
     for key, info in list(test_results.items()):
         missing_keys = []
         for expected_key in ['p_value']:
@@ -217,9 +268,9 @@ def apply_corrections(test_results):
         if missing_keys:
             print(f"Missing keys {missing_keys} in test result for {key}. Adding default values.")
             for missing_key in missing_keys:
-                test_results[key][missing_key] = 1.0  # 기본값으로 1.0 설정 (가장 보수적인 p-value)
+                test_results[key][missing_key] = 1.0  # Set default value to 1.0 (most conservative p-value)
     
-    # 검색엔진(pir_folder)과 쿼리로 그룹화
+    # Group by search engine (pir_folder) and query
     grouped_tests = {}
     for key, info in test_results.items():
         search_engine = key[1]
@@ -271,15 +322,54 @@ def apply_corrections(test_results):
             test_results[key]['bh_adjusted_p_value'] = bh_adjusted_p_values[i]
             test_results[key]['bonferroni_significant'] = p_values[i] < bonferroni_alpha
             test_results[key]['bh_significant'] = bh_adjusted_p_values[i] < 0.05
-            # 그룹 정보 추가
+            # Add group information
             test_results[key]['correction_group'] = f"{group_key[0]}_{group_key[1]}"
             test_results[key]['group_size'] = n_tests
     
     return test_results
 
 def normalize_data_length(scores_by_pf):
-    min_length = min(len(scores) for scores in scores_by_pf.values())
-    return {pf: scores[:min_length] for pf, scores in scores_by_pf.items()}
+    """
+    Normalize data length across user context groups for statistical testing.
+    
+    This function ensures that all user context groups have comparable sample sizes
+    by either padding shorter groups or truncating longer groups. This is important
+    for statistical power and fair comparison across contexts.
+    
+    Args:
+        scores_by_pf (dict): Dictionary mapping user context to list of scores
+                            e.g., {'region1': [score1, score2, ...], 'region2': [...]}
+        
+    Returns:
+        list: List of score arrays, one for each user context group
+        
+    Note:
+        Groups with insufficient data (< 2 observations) are excluded from analysis
+        to ensure meaningful statistical testing.
+    """
+    if not scores_by_pf:
+        return []
+    
+    scores_list = []
+    min_length = float('inf')
+    
+    # Filter out groups with insufficient data and find minimum length
+    valid_groups = {}
+    for pf, scores in scores_by_pf.items():
+        if len(scores) >= 2:  # Minimum required for statistical testing
+            valid_groups[pf] = scores
+            min_length = min(min_length, len(scores))
+    
+    if not valid_groups or min_length < 2:
+        return []
+    
+    # Normalize all groups to have the same length
+    for pf, scores in valid_groups.items():
+        if len(scores) >= min_length:
+            normalized_scores = scores[:min_length]  # Truncate to minimum length
+            scores_list.append(normalized_scores)
+    
+    return scores_list
 
 def ensure_numeric(scores_list):
     """
@@ -371,7 +461,7 @@ for datetime_folder in datetime_folders:
                                 print(f"No data for {datetime_folder}, {pir_folder}, {pf_folder}, {query}, {model_name} {pf_values}")
                             elif len(scores_list) == 1:
                                 print(f"Only one group for {datetime_folder}, {pir_folder}, {pf_folder}, {query}, {model_name}. Cannot perform statistical test.")
-                                # 통계 테스트를 할 수 없는 경우 기본값 설정
+                                # set default values when statistical tests cannot be performed
                                 key = (datetime_folder, pir_folder, pf_folder, query, model_name, directness)
                                 pf_model_comparisons[key] = {
                                     'pf_values': pf_values,
@@ -400,13 +490,13 @@ for datetime_folder in datetime_folders:
                                     if normality_passed and homogeneity_passed:
                                         try:
                                             stat, p_value = f_oneway(*scores_list)
-                                            # NaN 확인 및 처리
+                                            # check and handle NaN values
                                             if np.isnan(stat) or np.isnan(p_value):
                                                 
                                                 print(f"Warning: NaN result in ANOVA for {datetime_folder}, {pir_folder}, {pf_folder}, {query}, {model_name}")
                                                 print("scores_list",scores_list)
                                                 stat = 0.0
-                                                p_value = 1.0  # 가장 보수적인 값
+                                                p_value = 1.0  # most conservative value
                                             
                                             test_name = 'ANOVA'
                                             try:
@@ -415,7 +505,7 @@ for datetime_folder in datetime_folders:
                                                 print(f"Error in Tukey test: {e}")
                                                 tukey_results = None
                                             
-                                            # ANOVA effect size 계산
+                                            # Calculate ANOVA effect size
                                             eta_squared, omega_squared, effect_interpretation = calculate_anova_effect_size(scores_list)
                                             effect_size = eta_squared
                                             effect_size_type = 'Eta Squared'
@@ -424,7 +514,7 @@ for datetime_folder in datetime_folders:
                                         except Exception as e:
                                             print(f"Error in ANOVA: {e}")
                                             stat = 0.0
-                                            p_value = 1.0  # 가장 보수적인 값
+                                            p_value = 1.0  # most conservative value
                                             test_name = 'ANOVA (Error)'
                                             tukey_results = None
                                             effect_size = 0.0
@@ -435,11 +525,11 @@ for datetime_folder in datetime_folders:
                                     else:
                                         try:
                                             stat, p_value = kruskal(*scores_list)
-                                            # NaN 확인 및 처리
+                                            # check and handle NaN values
                                             if np.isnan(stat) or np.isnan(p_value):
                                                 print(f"Warning: NaN result in Kruskal-Wallis for {datetime_folder}, {pir_folder}, {pf_folder}, {query}, {model_name}")
                                                 stat = 0.0
-                                                p_value = 1.0  # 가장 보수적인 값
+                                                p_value = 1.0  # most conservative value
                                             
                                             # print(f"Original p-values: {p_value}")  # Kruskal-Wallis 테스트 결과 출력
                                             test_name = 'Kruskal-Wallis'
@@ -454,7 +544,7 @@ for datetime_folder in datetime_folders:
                                         except Exception as e:
                                             print(f"Error in Kruskal-Wallis: {e}")
                                             stat = 0.0
-                                            p_value = 1.0  # 가장 보수적인 값
+                                            p_value = 1.0  # most conservative value
                                             test_name = 'Kruskal-Wallis (Error)'
                                             tukey_results = None
                                             effect_size = 0.0
@@ -464,7 +554,7 @@ for datetime_folder in datetime_folders:
                                             effect_interpretation = 'negligible'
                                 except Exception as e:
                                     print(f"Error during statistical tests: {e}")
-                                    # 오류 발생 시 기본값 설정
+                                    # set default values on error
                                     normality_passed = False
                                     homogeneity_passed = False
                                     stat = 0.0
@@ -509,7 +599,7 @@ for datetime_folder in datetime_folders:
                             print(f"No data for {datetime_folder}, {pir_folder}, {pf_folder}, {query}, {model_name} {pf_values}")
                         elif len(scores_list) == 1:
                             print(f"Only one group for {datetime_folder}, {pir_folder}, {pf_folder}, {query}, {model_name}. Cannot perform statistical test.")
-                            # 통계 테스트를 할 수 없는 경우 기본값 설정
+                            # set default values when statistical tests cannot be performed
                             key = (datetime_folder, pir_folder, pf_folder, query, model_name, 'all')
                             pf_model_comparisons[key] = {
                                 'pf_values': pf_values,
@@ -538,12 +628,12 @@ for datetime_folder in datetime_folders:
                                 if normality_passed and homogeneity_passed:
                                     try:
                                         stat, p_value = f_oneway(*scores_list)
-                                        # NaN 확인 및 처리
+                                        # check and handle NaN values
                                         if np.isnan(stat) or np.isnan(p_value):
                                             print(f"Warning: NaN result in ANOVA for {datetime_folder}, {pir_folder}, {pf_folder}, {query}, {model_name}")
                                             # print("scores_list",scores_list)
                                             stat = 0.0
-                                            p_value = 1.0  # 가장 보수적인 값
+                                            p_value = 1.0  # most conservative value
                                         
                                         test_name = 'ANOVA'
                                         try:
@@ -561,7 +651,7 @@ for datetime_folder in datetime_folders:
                                     except Exception as e:
                                         print(f"Error in ANOVA: {e}")
                                         stat = 0.0
-                                        p_value = 1.0  # 가장 보수적인 값
+                                        p_value = 1.0  # most conservative value
                                         test_name = 'ANOVA (Error)'
                                         tukey_results = None
                                         effect_size = 0.0
@@ -572,11 +662,11 @@ for datetime_folder in datetime_folders:
                                 else:
                                     try:
                                         stat, p_value = kruskal(*scores_list)
-                                        # NaN 확인 및 처리
+                                        # check and handle NaN values
                                         if np.isnan(stat) or np.isnan(p_value):
                                             print(f"Warning: NaN result in Kruskal-Wallis for {datetime_folder}, {pir_folder}, {pf_folder}, {query}, {model_name}")
                                             stat = 0.0
-                                            p_value = 1.0  # 가장 보수적인 값
+                                            p_value = 1.0  # most conservative value
                                         
                                         # print(f"Kruskal-Wallis Original p-values: {p_value}")  # Kruskal-Wallis 테스트 결과 출력
                                         test_name = 'Kruskal-Wallis'
@@ -591,7 +681,7 @@ for datetime_folder in datetime_folders:
                                     except Exception as e:
                                         print(f"Error in Kruskal-Wallis: {e}")
                                         stat = 0.0
-                                        p_value = 1.0  # 가장 보수적인 값
+                                        p_value = 1.0  # most conservative value
                                         test_name = 'Kruskal-Wallis (Error)'
                                         tukey_results = None
                                         effect_size = 0.0
@@ -601,7 +691,7 @@ for datetime_folder in datetime_folders:
                                         effect_interpretation = 'negligible'
                             except Exception as e:
                                 print(f"Error during statistical tests: {e}")
-                                # 오류 발생 시 기본값 설정
+                                # set default values on error
                                 normality_passed = False
                                 homogeneity_passed = False
                                 stat = 0.0
@@ -630,36 +720,36 @@ for datetime_folder in datetime_folders:
                                 'effect_interpretation': effect_interpretation
                             }
 
-# NaN 값 확인
+# check and handle NaN values
 nan_keys = []
 for key, info in pf_model_comparisons.items():
     if 'p_value' not in info or np.isnan(info.get('p_value', np.nan)):
         nan_keys.append(key)
-        # 기본값 설정
+        # set default values
         pf_model_comparisons[key]['p_value'] = 1.0
 
 if nan_keys:
     print(f"Found {len(nan_keys)} keys with missing or NaN p_value before applying corrections")
 
-# 본페로니 및 Benjamini-Hochberg 보정 적용
+# apply Bonferroni and Benjamini-Hochberg corrections
 try:
     pf_model_comparisons = apply_corrections(pf_model_comparisons)
 except Exception as e:
     print(f"Error during apply_corrections: {e}")
-    # 수동으로 보정 적용
+    # manual correction application
     for key, info in pf_model_comparisons.items():
         if 'p_value' in info:
             p_value = info['p_value']
             if np.isnan(p_value):
                 p_value = 1.0
-            pf_model_comparisons[key]['bonferroni_p_value'] = min(p_value * 1.0, 1.0)  # 단일 보정 적용
-            pf_model_comparisons[key]['bh_adjusted_p_value'] = min(p_value * 1.0, 1.0)  # 단일 보정 적용
+            pf_model_comparisons[key]['bonferroni_p_value'] = min(p_value * 1.0, 1.0)  # single correction
+            pf_model_comparisons[key]['bh_adjusted_p_value'] = min(p_value * 1.0, 1.0)  # single correction
             pf_model_comparisons[key]['bonferroni_significant'] = False
             pf_model_comparisons[key]['bh_significant'] = False
             pf_model_comparisons[key]['correction_group'] = "manual_correction"
             pf_model_comparisons[key]['group_size'] = 1
 
-# NaN 값 재확인
+# check and handle NaN values again
 nan_keys = []
 for key, info in pf_model_comparisons.items():
     missing_fields = []
@@ -669,11 +759,11 @@ for key, info in pf_model_comparisons.items():
     
     if missing_fields:
         nan_keys.append((key, missing_fields))
-        # 기본값 설정
+        # set default values
         for field in missing_fields:
             pf_model_comparisons[key][field] = 1.0
         
-        # 관련 significant 필드 설정
+        # set related significant fields
         if 'bonferroni_p_value' in missing_fields:
             pf_model_comparisons[key]['bonferroni_significant'] = False
         if 'bh_adjusted_p_value' in missing_fields:
@@ -682,14 +772,14 @@ for key, info in pf_model_comparisons.items():
 if nan_keys:
     print(f"Found {len(nan_keys)} keys with missing or NaN values after applying corrections")
 
-# Save the results에서 DataFrame 생성 부분을 수정
+# save results
 try:
     results_df = pd.DataFrame([
         {
             'datetime_folder': key[0],
             'pir_folder': key[1],
             'pf_folder': key[2],
-            'query': key[3].lower(),  # 쿼리를 소문자로 변환하여 unique_url_counts_df와 일치시킴
+            'query': key[3].lower(),  # convert query to lowercase to match unique_url_counts_df
             'model_name': key[4],
             'directness': key[5],
             'pf_values': ', '.join(map(str, test_info.get('pf_values', []))),
@@ -716,7 +806,7 @@ try:
     ])
 except Exception as e:
     print(f"Error creating results DataFrame: {e}")
-    # 더 안전한 방식으로 DataFrame 생성
+    # safer way to create DataFrame
     rows = []
     for key, test_info in pf_model_comparisons.items():
         try:
@@ -753,13 +843,13 @@ except Exception as e:
     
     results_df = pd.DataFrame(rows)
 
-# NaN 값 최종 확인 및 수정
+# final check and correction for NaN values
 for column in results_df.columns:
     nan_count = results_df[column].isna().sum()
     if nan_count > 0:
         print(f"Column {column} has {nan_count} NaN values. Filling with appropriate defaults.")
         
-        # 데이터 타입에 따라 적절한 기본값 설정
+        # set appropriate default values based on data type
         if column in ['p_value', 'bonferroni_p_value', 'bh_adjusted_p_value', 'stat', 'effect_size', 'effect_size_secondary', 'group_size']:
             results_df[column] = results_df[column].fillna(0.0 if column == 'stat' else 1.0)
         elif column in ['original_significant', 'bonferroni_significant', 'bh_significant', 'normality_passed', 'homogeneity_passed']:
@@ -769,7 +859,7 @@ for column in results_df.columns:
         else:
             results_df[column] = results_df[column].fillna('')
 
-# 고유 URL 개수 정보와 테스트 결과 병합
+# merge unique URL counts and test results
 try:
     merged_results_df = pd.merge(
         results_df,
@@ -778,7 +868,7 @@ try:
         how='left'
     )
     
-    # 병합 후 누락된 값 확인
+    # check for missing values after merge
     na_count = merged_results_df['Unique_URL_Count'].isna().sum()
     if na_count > 0:
         print(f"Warning: {na_count} rows have missing Unique_URL_Count after merge. Filling with 0.")
@@ -786,9 +876,9 @@ try:
 except Exception as e:
     print(f"Error during merge with unique_url_counts_df: {e}")
     merged_results_df = results_df
-    merged_results_df['Unique_URL_Count'] = 0  # 기본값 추가
+    merged_results_df['Unique_URL_Count'] = 0  # add default value
 
-# 결과 파일 저장
+# save results
 if not os.path.exists(os.path.join(current_dir, f'4')):
     os.makedirs(os.path.join(current_dir, f'4'))
 
@@ -797,7 +887,7 @@ try:
     print(f"Results with unique URL counts saved to 'tests_{setting_date}.csv'")
 except Exception as e:
     print(f"Error saving CSV file: {e}")
-    # CSV 저장 실패 시 백업 파일 시도
+    # try to save backup file on CSV save failure
     try:
         merged_results_df.to_csv(f'4/tests_{setting_date}_backup.csv', index=False)
         print(f"Backup results saved to 'tests_{setting_date}_backup.csv'")

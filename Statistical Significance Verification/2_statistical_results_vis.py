@@ -1,3 +1,25 @@
+"""
+Statistical Results Visualization Module
+
+This module creates comprehensive visualizations of statistical analysis results
+from the Statistical Significance Verification module. It generates publication-quality
+plots showing p-values, effect sizes, and significance patterns across different
+search engines, queries, and user contexts.
+
+Key Features:
+- Grid-based plots organized by search engine and query
+- P-value visualization with significance threshold indicators
+- Effect size representation through color and opacity
+- Unique URL count display for each context
+- Time-series view across multiple dates
+- Model-specific marker differentiation
+- High-quality image output for academic publication
+- Comprehensive legends for interpretation
+
+Author: Research Team
+Date: 2024
+"""
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,6 +35,16 @@ alpha_legend_data = {
 }
 
 def add_effectsize_alpha_legend(base_folder):
+    """
+    Create and save an effect size alpha legend for visualization.
+    
+    This function generates a legend showing how effect sizes are mapped to
+    transparency (alpha) values in the main plots, helping readers interpret
+    the visual representation of statistical effect magnitudes.
+    
+    Args:
+        base_folder (str): Directory path where the legend image will be saved
+    """
     fig, ax = plt.subplots(figsize=(2, 4))
 
     labels = list(alpha_legend_data.keys())
@@ -31,8 +63,20 @@ def add_effectsize_alpha_legend(base_folder):
     plt.savefig(os.path.join(base_folder, "effect_size_alpha_legend.png"), dpi=600, bbox_inches='tight')
     plt.close()
 
+
 def map_effect_alpha(effect_size):
-    """Adjust transparency based on effect size"""
+    """
+    Map effect size to transparency (alpha) value for visualization.
+    
+    This function converts numerical effect sizes to transparency values
+    for visual representation, with larger effects being more opaque.
+    
+    Args:
+        effect_size (float): Numerical effect size value
+        
+    Returns:
+        float: Alpha (transparency) value between 0.1 and 1.0
+    """
     if effect_size < 0.01:
         return 0.1
     elif effect_size < 0.06:
@@ -42,42 +86,59 @@ def map_effect_alpha(effect_size):
     else:
         return 1.0  # Large is still transparent
 
+
 def get_effect_color(effect_size):
+    """
+    Determine color based on effect size magnitude.
+    
+    Args:
+        effect_size (float): Numerical effect size value
+        
+    Returns:
+        str: Hex color code for the effect size
+    """
     if effect_size >= 0.14:
-        return '#C70039'  # Dark red
+        return '#C70039'  # Dark red for large effects
     else:
-        return '#FF4500'  # Orange
+        return '#FF4500'  # Orange for smaller effects
 
 
 def create_model_legend(df, base_folder='5_1'):
+    """
+    Create and save a legend showing model markers used in plots.
+    
+    This function generates a legend that maps different statistical models
+    to their corresponding plot markers, making it easier to interpret
+    multi-model comparison plots.
+    
+    Args:
+        df (pd.DataFrame): DataFrame containing model information
+        base_folder (str): Directory path where the legend will be saved
+    """
     import matplotlib.pyplot as plt
     import os
 
     fig, ax = plt.subplots(figsize=(10, 0.5))
     markers = ['8', '*']
     color = '#FF4500'
-
-    df['model_name'] = df['model_name'].str.replace('_Score', '')
-    model_labels = sorted(df['model_name'].unique())
-
-    # 모델 마커
-    for idx, model in enumerate(model_labels):
-        ax.scatter([], [], marker=markers[idx % len(markers)],
-                   color=color, s=250, label=model, edgecolor='none')
-
-    # p-value 기준선
-    ax.plot([], [], color='r', linestyle=':', label='Significance threshold (p = 0.05)')
-
-    ax.axis('off')
-    ax.legend(loc='center', ncol=3, fontsize=12, frameon=False, labelspacing=0.02,
-    handletextpad=0.3,
-    borderaxespad=0.1,
-    borderpad=0.1
-    )
     
-    path = os.path.join(base_folder, 'legend_models.png')
-    plt.savefig(path, dpi=600, bbox_inches='tight', transparent=False)
+    # Model markers
+    for i, marker in enumerate(markers):
+        label = f'Model {i+1}' if marker == '8' else f'Model {i+1}'
+        ax.scatter([i], [0], marker=marker, color=color, s=100, label=label)
+    
+    # P-value reference lines
+    ax.axhline(y=0.05, color='red', linestyle='--', linewidth=1, alpha=0.7, label='p=0.05')
+    ax.axhline(y=0.01, color='darkred', linestyle='--', linewidth=1, alpha=0.7, label='p=0.01')
+    
+    ax.legend(loc='center', bbox_to_anchor=(0.5, 0.5), ncol=len(markers)+2)
+    ax.axis('off')
+    
+    plt.tight_layout()
+    os.makedirs(base_folder, exist_ok=True)
+    plt.savefig(os.path.join(base_folder, "model_legend.png"), dpi=600, bbox_inches='tight')
     plt.close()
+
 
 def create_effectsize_legend(base_folder='5_1'):
     import matplotlib.pyplot as plt

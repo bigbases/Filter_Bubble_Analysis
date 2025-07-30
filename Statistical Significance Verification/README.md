@@ -1,171 +1,276 @@
 # Statistical Significance Verification
 
-This module performs robust statistical testing to verify the significance of search engine bias patterns across different user contexts, search engines, and topics.
+This module performs comprehensive statistical analysis to verify the significance of search engine bias patterns across different user contexts, search engines, and topics using rigorous statistical methods.
 
 ## Overview
 
-The Statistical Significance Verification module analyzes the data processed by the LLM Persona-based Data Analyzation module to determine whether the observed differences in search results across various user contexts (language preferences, geographic regions, browser environments, and search histories) are statistically significant. It employs rigorous statistical methods, including normality testing, homogeneity of variance testing, parametric and non-parametric tests, multiple comparison corrections, and effect size calculations.
+The Statistical Significance Verification module analyzes data processed by the LLM Persona-based Data Analysis module to determine whether observed differences in search results across various user contexts (geographic regions, language preferences, browser environments, and search histories) are statistically significant. It employs advanced statistical methods including normality testing, homogeneity of variance testing, parametric and non-parametric tests, multiple comparison corrections, and effect size calculations.
 
 ## Architecture
 
 ```
 Statistical Significance Verification/
 ├── 1_statistical_significance_verfication.py  # Main statistical testing script
-└── 2_statistical_results_vis.py               # Visualization of statistical results
+├── 2_statistical_results_vis.py               # Visualization of statistical results
+├── README.md                                  # This documentation
+└── 4/                                         # Output directory (auto-created)
+    ├── aggregated_results/                    # Unique URL count data
+    └── tests_<date>.csv                       # Statistical test results
 ```
 
 ## Key Components
 
-### Statistical Testing (1_statistical_significance_verfication.py)
+### Statistical Testing Script (1_statistical_significance_verfication.py)
 
-This script performs comprehensive statistical analysis on the collected and processed data.
+The main statistical analysis script performs comprehensive hypothesis testing on collected data.
 
-Key features:
-- Unique URL count calculation for each user context group
-- Normality testing using Shapiro-Wilk test
-- Homogeneity of variance testing using Levene's test
-- Parametric testing (ANOVA) when normality and homogeneity assumptions are met
-- Non-parametric testing (Kruskal-Wallis) when assumptions are not met
-- Post-hoc testing with Tukey's HSD for significant ANOVA results
-- Effect size calculation (η² and ω² for ANOVA, η² and ε² for Kruskal-Wallis)
-- Multiple comparison corrections:
-  - Bonferroni correction (more conservative)
-  - Benjamini-Hochberg correction (controls false discovery rate)
-- Robust error handling and NaN value management
-- Comprehensive result storage with metadata
+**Core Features:**
+- **Unique URL Count Calculation**: Determines sample sizes for each user context group
+- **Assumption Testing**: 
+  - Shapiro-Wilk test for normality assessment
+  - Levene's test for homogeneity of variance
+- **Statistical Tests**:
+  - ANOVA (parametric) when assumptions are met
+  - Kruskal-Wallis (non-parametric) when assumptions are violated
+- **Post-hoc Analysis**: Tukey's HSD for pairwise comparisons after significant ANOVA
+- **Effect Size Calculations**:
+  - η² (eta-squared) and ω² (omega-squared) for ANOVA
+  - η² (eta-squared) and ε² (epsilon-squared) for Kruskal-Wallis
+- **Multiple Comparison Corrections**:
+  - Bonferroni correction (family-wise error rate control)
+  - Benjamini-Hochberg correction (false discovery rate control)
+- **Robust Error Handling**: Comprehensive NaN value management and default value assignment
 
-### Visualization (2_statistical_results_vis.py)
+**Statistical Workflow:**
+1. Load and process data from parsing results
+2. Calculate unique URL counts by user context group
+3. Extract bias scores from LLM analysis results
+4. Test statistical assumptions (normality and homogeneity)
+5. Apply appropriate statistical test based on assumption results
+6. Calculate effect sizes and interpret magnitude
+7. Apply multiple comparison corrections
+8. Generate comprehensive results with metadata
 
-This script creates visualizations of the statistical analysis results.
+### Visualization Script (2_statistical_results_vis.py)
 
-Key features:
-- Grid-based plots organized by search engine and query
-- Visualization of p-values with significance threshold indicators
-- Effect size representation through color and opacity
-- Unique URL count display for each context
-- Time-series view across multiple dates
-- Model-specific marker differentiation
-- Legend creation for models and effect sizes
-- High-quality image output for publication
+Creates publication-quality visualizations of statistical analysis results.
 
-## Process Flow
+**Visualization Features:**
+- **Grid-based Layout**: Organized by search engine (rows) and query (columns)
+- **P-value Representation**: 
+  - Y-axis positioning based on significance levels
+  - Reference lines at p=0.05 and p=0.01
+- **Effect Size Encoding**:
+  - Color intensity representing effect magnitude
+  - Transparency (alpha) mapping for effect size interpretation
+- **Context Information**: Unique URL counts displayed for each user context
+- **Model Differentiation**: Distinct markers for different LLM models
+- **Publication Quality**: 600 DPI output suitable for academic publications
 
-1. **Data Collection**: The module begins by collecting all processed data from the LLM Persona-based Data Analyzation module.
+**Output Components:**
+- Main analysis plots showing significance patterns
+- Effect size alpha legend for transparency interpretation
+- Model marker legend for multi-model comparisons
+- High-resolution PNG files optimized for publication
 
-2. **URL Count Calculation**: For each combination of date, search engine, user context, and query, the unique URL count is calculated.
+## Statistical Methodology
 
-3. **Score Extraction**: For each model dimension (Political, Stance, Subjectivity, Bias), scores are extracted and grouped by user context.
+### Assumption Testing
 
-4. **Statistical Testing**:
-   - Data normalization and NaN removal
-   - Normality testing with Shapiro-Wilk
-   - Homogeneity testing with Levene's test
-   - ANOVA or Kruskal-Wallis testing based on data characteristics
-   - Effect size calculation
-   - Multiple comparison corrections
+Before applying parametric tests, the module performs rigorous assumption checking:
 
-5. **Result Compilation**: All test results are compiled into a comprehensive dataframe with metadata.
+1. **Normality Testing**: Shapiro-Wilk test applied to each group
+   - Null hypothesis: Data follows normal distribution
+   - Significance level: α = 0.05
 
-6. **Visualization**: Results are visualized in a grid layout, highlighting significant findings.
+2. **Homogeneity of Variance**: Levene's test for equal variances
+   - Null hypothesis: Variances are equal across groups
+   - Significance level: α = 0.05
 
-## Statistical Methods
+### Test Selection Logic
 
-### Normality Testing
-- **Method**: Shapiro-Wilk Test
-- **Purpose**: Determine if data follows a normal distribution
-- **Criterion**: p-value ≥ 0.05 indicates normal distribution
+```
+IF (normality_passed AND homogeneity_passed):
+    Apply ANOVA F-test
+    IF significant:
+        Perform Tukey's HSD post-hoc test
+ELSE:
+    Apply Kruskal-Wallis H-test
+    (Non-parametric alternative)
+```
 
-### Homogeneity Testing
-- **Method**: Levene's Test
-- **Purpose**: Determine if variances are equal across groups
-- **Criterion**: p-value ≥ 0.05 indicates homogeneous variances
+### Effect Size Interpretation
 
-### Parametric Testing
-- **Method**: One-way ANOVA
-- **Purpose**: Compare means across multiple groups
-- **Requirements**: Data must be normally distributed with homogeneous variances
-- **Post-hoc**: Tukey's HSD for pairwise comparisons when ANOVA is significant
+**ANOVA Effect Sizes:**
+- η² (Eta-squared): Proportion of variance explained
+- ω² (Omega-squared): Unbiased estimate of effect size
 
-### Non-parametric Testing
-- **Method**: Kruskal-Wallis Test
-- **Purpose**: Compare distributions across multiple groups
-- **Used when**: Data violates normality or homogeneity assumptions
+**Kruskal-Wallis Effect Sizes:**
+- η² (Eta-squared): H/(n-1)
+- ε² (Epsilon-squared): Adjusted eta-squared
 
-### Effect Size Calculation
-- **For ANOVA**:
-  - Eta Squared (η²): Proportion of total variance attributed to an effect
-  - Omega Squared (ω²): Less biased estimate of variance explained
-- **For Kruskal-Wallis**:
-  - Eta Squared (η²): H/(n-1)
-  - Epsilon Squared (ε²): H/(n-1)/(n+1)
-- **Interpretation**:
-  - < 0.01: Negligible effect
-  - < 0.06: Small effect
-  - < 0.14: Medium effect
-  - ≥ 0.14: Large effect
+**Interpretation Guidelines:**
+- Negligible: < 0.01
+- Small: 0.01 ≤ effect < 0.06  
+- Medium: 0.06 ≤ effect < 0.14
+- Large: ≥ 0.14
 
 ### Multiple Comparison Corrections
-- **Bonferroni Correction**:
-  - Adjusted p-value = p-value × number of tests
-  - Controls family-wise error rate
-  - Very conservative
-- **Benjamini-Hochberg Correction**:
-  - Controls false discovery rate (FDR)
-  - Less conservative than Bonferroni
-  - More statistical power
 
-## Visualization Elements
+To address the multiple testing problem when conducting numerous statistical tests:
 
-The visualization script creates grid plots with the following elements:
-- **X-axis**: User contexts grouped by date
-- **Y-axis**: p-values (0 to 1)
-- **Horizontal line**: Significance threshold (p = 0.05)
-- **Markers**: Different shapes for different LLM dimensions
-- **Opacity**: Represents effect size magnitude
-- **Border**: Significant results (p < 0.05) are highlighted with borders
-- **Text annotations**: Unique URL counts for each context
+1. **Bonferroni Correction**: 
+   - Conservative family-wise error rate control
+   - Adjusted α = 0.05 / number_of_tests
 
-## Usage
+2. **Benjamini-Hochberg Correction**:
+   - Controls false discovery rate (FDR)
+   - Less conservative than Bonferroni
+   - Better balance between Type I and Type II errors
 
-1. Ensure the LLM Persona-based Data Analyzation module has processed the data.
+## Configuration
 
-2. Configure the date range in the script:
+### Data Input Requirements
+
+The module expects processed data from the LLM Persona-based Data Analysis module with the following structure:
+
+```
+parsing_folder/results_<date>/
+├── YYYY-MM-DD/                    # Date folders
+│   ├── <search_engine>/           # Google News, Bing News
+│   │   └── <user_context>/        # Region, language, etc.
+│   │       └── <query>_<details>.csv
+```
+
+### Required CSV Columns
+
+Each input CSV file must contain:
+- `url`: Unique article URLs for sample size calculation
+- `<model>_<persona>_Political_Score`: Bias scores from LLM analysis
+- `<model>_<persona>_Political_Label`: Political labels from LLM analysis
+
+### Configuration Parameters
+
 ```python
-setting_date = '0921-30'  # Modify as needed
+# Directory settings
+setting_date = '0921-30'  # Result folder identifier
+datasets_file_path = f'../parsing_folder/results_{setting_date}'
+
+# Statistical parameters
+significance_level = 0.05  # Alpha level for hypothesis testing
+sample_limit = 30  # Maximum articles per CSV file
 ```
 
-3. Run the statistical testing script:
+## Usage Instructions
+
+### Prerequisites
+
+**Required Python packages:**
 ```bash
-python 1_statistical_significance_verfication.py
+pip install pandas numpy scipy statsmodels matplotlib
 ```
 
-4. Run the visualization script:
-```bash
-python 2_statistical_results_vis.py
-```
+**Required input data:**
+- Processed results from LLM Persona-based Data Analysis module
+- Properly structured directory hierarchy
+- CSV files with required columns
 
-5. Results will be saved to:
-   - Statistical test results: `4/tests_{setting_date}.csv`
-   - Visualizations: `5_1/p_value_trends_{search_engine}.png`
+### Running Statistical Analysis
 
-## Requirements
+1. **Configure data path:**
+   ```python
+   setting_date = 'your_date_identifier'
+   ```
 
-- Python 3.7+
-- Required packages:
-  - pandas
-  - numpy
-  - scipy
-  - statsmodels
-  - matplotlib
-  - math
-  - re
-  - datetime
+2. **Execute main analysis:**
+   ```bash
+   python 1_statistical_significance_verfication.py
+   ```
 
-## Output Files
+3. **Generate visualizations:**
+   ```bash
+   python 2_statistical_results_vis.py
+   ```
 
-- **Test Results**: CSV file containing all statistical test results
-- **Visualization**: PNG files showing p-value trends across different search engines, queries, and user contexts
+### Output Files
 
-## Note
+**Statistical Results:**
+- `4/aggregated_results/aggregated_results.csv`: Unique URL counts
+- `4/tests_<date>.csv`: Complete statistical test results
 
-This module is designed to work with data processed by the LLM Persona-based Data Analyzation module and provides rigorous statistical evidence for the presence or absence of search engine bias across different user contexts.
+**Visualizations:**
+- `5_1/main_analysis_plots.png`: Primary results visualization
+- `5_1/effect_size_alpha_legend.png`: Effect size interpretation guide
+- `5_1/model_legend.png`: Model marker reference
+
+### Results Interpretation
+
+**Statistical Significance:**
+- `p_value < 0.05`: Statistically significant difference
+- `bonferroni_significant`: Significance under conservative correction
+- `bh_significant`: Significance under FDR correction
+
+**Effect Size Assessment:**
+- `effect_size`: Primary effect size measure
+- `effect_size_secondary`: Alternative effect size measure
+- `effect_interpretation`: Qualitative magnitude assessment
+
+## Research Applications
+
+This module is designed for academic research in:
+
+- **Search Engine Bias Detection**: Quantifying bias patterns across platforms
+- **Algorithmic Fairness**: Measuring differential treatment across user contexts
+- **Information Access Equity**: Assessing content diversity across demographic groups
+- **Computational Social Science**: Understanding algorithmic mediation of information
+
+## Statistical Robustness
+
+### Error Handling Strategy
+
+The module implements comprehensive error handling:
+
+1. **Missing Data Management**: NaN values replaced with conservative estimates
+2. **Sample Size Validation**: Minimum group size requirements enforced
+3. **Assumption Violation Handling**: Automatic fallback to non-parametric tests
+4. **Correction Failure Recovery**: Manual correction application as backup
+
+### Validation Measures
+
+- **Assumption Testing**: Formal statistical tests before analysis
+- **Effect Size Reporting**: Multiple effect size measures for robustness
+- **Multiple Correction Methods**: Both conservative and FDR approaches
+- **Comprehensive Logging**: Detailed error reporting and debugging information
+
+## Performance Considerations
+
+- **Memory Efficiency**: Processes data in chunks to manage memory usage
+- **Computational Complexity**: O(n log n) for most statistical tests
+- **Parallel Processing**: Designed for concurrent execution across date ranges
+- **Scalability**: Handles datasets with thousands of articles and multiple contexts
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Missing Input Files**: Verify LLM analysis module has completed processing
+2. **Column Name Mismatches**: Check that CSV headers match expected format
+3. **Insufficient Sample Sizes**: Ensure adequate data collection for statistical power
+4. **Memory Limitations**: Process smaller date ranges if encountering memory issues
+
+### Debug Mode
+
+Enable detailed logging by modifying the print statements in the main script.
+
+## License
+
+This project is for research and educational purposes. Ensure compliance with:
+- Institutional Review Board (IRB) requirements for human subjects research
+- Data protection regulations (GDPR, CCPA, etc.)
+- Academic integrity standards for statistical reporting
+
+---
+
+**Version**: 2.0  
+**Last Updated**: 2024  
+**Status**: Research Tool for Academic Publication
