@@ -195,7 +195,7 @@ class DetailContentScraper:
                         
                         # Delay between pages (to avoid bot detection)
                         if page_num < max_pages - 1:
-                            random_sleep(min_seconds=30, max_seconds=60)
+                            random_sleep(min_seconds=60, max_seconds=90)
                             
                     except Exception as e:
                         current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
