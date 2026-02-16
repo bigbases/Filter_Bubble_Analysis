@@ -269,6 +269,22 @@ This project is for research and educational purposes. Ensure compliance with:
 - Data protection regulations (GDPR, CCPA, etc.)
 - Academic integrity standards for statistical reporting
 
+## Publication
+
+**Paper Title**: FAIR-SE: Framework for Analyzing Information Disparities in Search Engines with Diverse LLM-Generated Personas
+
+**Authors**: Jaebeom You, Seung-Kyu Hong, Ling Liu, Kisung Lee, Hyuk-Yoon Kwon
+
+**Conference**: Proceedings of the 34th ACM International Conference on Information and Knowledge Management
+
+**Year**: 2025
+
+**DOI**: ---
+
+**Published**: November 10--14, 2025
+
+**Link**: ---
+
 ---
 
 **Version**: 2.0  
